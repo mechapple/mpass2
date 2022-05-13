@@ -152,7 +152,7 @@ void cBezier::update_bezier()
     STATEFILE, SPIN,
     &nregions, &neval, &fail, integral, error, prob);
   
-  loop(i,4) loop(j,4) gsl_matrix_set(M,i,j,rho[type-1]*integral[i*4+j]);
+  loop(i,4) loop(j,4) gsl_matrix_set(M,i,j,rho[type-1]*(length0/length)*integral[i*4+j]);
   
   const gsl_matrix_const_view Q1 = gsl_matrix_const_view_array( v, 4, 3 );
   gsl_matrix_memcpy(Q, &Q1.matrix);
@@ -166,7 +166,7 @@ void cBezier::update_bezier()
     STATEFILE, SPIN,
     &nregions, &neval, &fail, integral, error, prob);
     
-  loop(i,4) loop(j,4) gsl_matrix_set(Mdot,i,j,rho[type-1]*integral[i*4+j]);  
+  loop(i,4) loop(j,4) gsl_matrix_set(Mdot,i,j,rho[type-1]*(length0/length)*integral[i*4+j]);  
   
   gsl_blas_dgemm (CblasNoTrans, CblasTrans, 1.0, Q, Q, 0.0, QQ);
   
@@ -176,7 +176,7 @@ void cBezier::update_bezier()
     STATEFILE, SPIN,
     &nregions, &neval, &fail, integral, error, prob);
     
-  loop(i,4) loop(j,4) gsl_matrix_set(N,i,j,rho[type-1]*integral[i*4+j]);  
+  loop(i,4) loop(j,4) gsl_matrix_set(N,i,j,rho[type-1]*(length0/length)*integral[i*4+j]);  
   
   //gsl_matrix_print(PP,"PP:");
   //length_bezier(); set_length0();
@@ -369,5 +369,5 @@ void cBezier::kin_energy()
   gsl_integration_cquad_workspace * w1 = gsl_integration_cquad_workspace_alloc(100);
   gsl_integration_cquad (&B1, 0.0, 1.0, ABS_ERR, REL_ERR2,w1, &resultc, &errorc, &nev);
   
-  kinE = 0.5*rho[type-1]*resultc;
+  kinE = 0.5*rho[type-1]*(length0/length)*resultc;
 }
