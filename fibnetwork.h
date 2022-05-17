@@ -24,7 +24,7 @@ class fibnetwork {
     void constraint_energy();
     void minimize();
     void computeK(gsl_matrix *);
-    void update_sys(double,gsl_matrix *,gsl_matrix *);
+    void update_sys(double,gsl_matrix *,gsl_matrix *, int);
     void integrate_runge_kutta_4(int, double);
 };
 
@@ -491,7 +491,7 @@ void fibnetwork::computeK(gsl_matrix *K)
   gsl_matrix_free(Minv);
 }
 
-void fibnetwork::update_sys(double dh, gsl_matrix *K0, gsl_matrix *K)
+void fibnetwork::update_sys(double dh, gsl_matrix *K0, gsl_matrix *K, int c2_flag)
 {
   //update Psys, Qsys, CPx, CPv
   loop(i,np) loop(j,3) gsl_matrix_set(Psys, i,j, gsl_matrix_get(K0, i,j) + dh*gsl_matrix_get(K, i,j) );
@@ -500,23 +500,24 @@ void fibnetwork::update_sys(double dh, gsl_matrix *K0, gsl_matrix *K)
   loop(i,np) loop(j,3) CPx[i].comp[j] = gsl_matrix_get(Psys, i,j);
   loop(i,np) loop(j,3) CPv[i].comp[j] = gsl_matrix_get(Qsys, i,j);
   
-  loop(i,C2_cps.size()) {
-    int a = C2_cps[i].comp[0];
-    int b = C2_cps[i].comp[1];
-    int c = C2_cps[i].comp[2];
-    int d = C2_cps[i].comp[3];
-    int e = C2_cps[i].comp[4];
-    
-    Vector3 db(CPx[d-1].comp[0]-CPx[b-1].comp[0], CPx[d-1].comp[1]-CPx[b-1].comp[1] , CPx[d-1].comp[2]-CPx[b-1].comp[2] );
-    Vector3 eb(CPx[e-1].comp[0]-CPx[b-1].comp[0], CPx[e-1].comp[1]-CPx[b-1].comp[1] , CPx[e-1].comp[2]-CPx[b-1].comp[2] );
-    Vector3 ad(CPx[a-1].comp[0]-CPx[d-1].comp[0], CPx[a-1].comp[1]-CPx[d-1].comp[1] , CPx[a-1].comp[2]-CPx[d-1].comp[2] );
-    
-    double m = sqrt(cross_mag(db,eb)/cross_mag(db,ad));
-    double x = 1.0/(1.0+m);
-    
-    printf("%d %d %d %d %d %d %lf %lf\n",i,a,b,c,d,e,m,x);
-    loop(j,3) CPx[c-1].comp[j] = x*CPx[d-1].comp[j] + (1.0-x)*CPx[b-1].comp[j];
-  }
+  if(c2_flag == 1)
+    loop(i,C2_cps.size()) {
+      int a = C2_cps[i].comp[0];
+      int b = C2_cps[i].comp[1];
+      int c = C2_cps[i].comp[2];
+      int d = C2_cps[i].comp[3];
+      int e = C2_cps[i].comp[4];
+      
+      Vector3 db(CPx[d-1].comp[0]-CPx[b-1].comp[0], CPx[d-1].comp[1]-CPx[b-1].comp[1] , CPx[d-1].comp[2]-CPx[b-1].comp[2] );
+      Vector3 eb(CPx[e-1].comp[0]-CPx[b-1].comp[0], CPx[e-1].comp[1]-CPx[b-1].comp[1] , CPx[e-1].comp[2]-CPx[b-1].comp[2] );
+      Vector3 ad(CPx[a-1].comp[0]-CPx[d-1].comp[0], CPx[a-1].comp[1]-CPx[d-1].comp[1] , CPx[a-1].comp[2]-CPx[d-1].comp[2] );
+      
+      double m = sqrt(cross_mag(db,eb)/cross_mag(db,ad));
+      double x = 1.0/(1.0+m);
+      
+      //printf("%d %d %d %d %d %d %lf %lf\n",i,a,b,c,d,e,m,x);
+      loop(j,3) CPx[c-1].comp[j] = x*CPx[d-1].comp[j] + (1.0-x)*CPx[b-1].comp[j];
+    }
   
   loop(i,nb) {    
     loop(j,4) {
@@ -560,16 +561,16 @@ void fibnetwork::integrate_runge_kutta_4(int nsteps, double h)
     loop(i,np) loop(j,3) gsl_matrix_set(K0, i,j, gsl_matrix_get(Psys, i,j));
     loop(i,np) loop(j,3) gsl_matrix_set(K0, np+i,j, gsl_matrix_get(Qsys, i,j));
     
-    computeK(K1); update_sys(0.5*h,K0,K1); //RK step 1
-    computeK(K2); update_sys(0.5*h,K0,K2); //RK step 2
-    computeK(K3); update_sys(h,K0,K3); //RK step 3
+    computeK(K1); update_sys(0.5*h,K0,K1,0); //RK step 1
+    computeK(K2); update_sys(0.5*h,K0,K2,0); //RK step 2
+    computeK(K3); update_sys(h,K0,K3,0); //RK step 3
     
     computeK(K4); //RK step 4
     loop(i,2*np) loop(j,3) {
       double Kij = gsl_matrix_get(K1, i,j) + 2*gsl_matrix_get(K2, i,j) + 2*gsl_matrix_get(K3, i,j) + gsl_matrix_get(K4, i,j) ;
       gsl_matrix_set(Kavg, i,j, Kij);
     }
-    update_sys((h/6.0),K0,Kavg); 
+    update_sys((h/6.0),K0,Kavg,1); 
     
     {
       assemble_matrices();
