@@ -515,6 +515,9 @@ void fibnetwork::update_sys(double dh, gsl_matrix *K0, gsl_matrix *K, int c2_fla
       double m = sqrt(cross_mag(db,eb)/cross_mag(db,ad));
       double x = 1.0/(1.0+m);
       
+      //EDIT1 to avoid singularities
+      if(x<0.1) x = 0.1; if(x>0.9) x = 0.9;
+      
       //printf("%d %d %d %d %d %d %lf %lf\n",i,a,b,c,d,e,m,x);
       loop(j,3) CPx[c-1].comp[j] = x*CPx[d-1].comp[j] + (1.0-x)*CPx[b-1].comp[j];
     }
