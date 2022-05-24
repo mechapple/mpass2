@@ -72,8 +72,8 @@ void cBezier::interpolateL(std::vector<Vector3> &points, int n) {
 
   //std::map<double, double> TLmap;
   size_t N = 10*n+1;
-  double *x = new double[N];
-  double *y = new double[N];
+  double *lgrid = new double[N];
+  double *tgrid = new double[N];
   
   int c=0;
   
@@ -82,20 +82,22 @@ void cBezier::interpolateL(std::vector<Vector3> &points, int n) {
     gsl_integration_cquad (&B1, 0.0, t, ABS_ERR, REL_ERR2,w1, &result, &error, &nev);
     //TLmap.insert(std::make_pair(t, result));
     
-    y[c] = t; x[c] = result;  c++;
+    tgrid[c] = t; lgrid[c] = result;  c++;
   }
+  
+  gsl_integration_cquad_workspace_free (w1);
   
   gsl_interp_accel *acc = gsl_interp_accel_alloc();
   gsl_spline *spline_steffen = gsl_spline_alloc(gsl_interp_steffen, N);
-  gsl_spline_init(spline_steffen, x, y, N);
+  gsl_spline_init(spline_steffen, lgrid, tgrid, N);
 
   int Ni = n;
   for (int i = 1; i <= Ni; ++i)
   {
-    double xi = (1 - i*1.0 / Ni) * x[0] + (i*1.0 / Ni) * x[N-1];
-    double t = gsl_spline_eval(spline_steffen, xi, acc);
+    double li = (1 - i*1.0 / Ni) * lgrid[0] + (i*1.0 / Ni) * lgrid[N-1];
+    double t = gsl_spline_eval(spline_steffen, li, acc);
 
-    printf("%g : %g\n", xi, t);
+    printf("%g : %g\n", li, t);
     
     double tc = 1.0-t;
     double X[4] = {tc*tc*tc, 3*tc*tc*t, 3*tc*t*t, t*t*t};
@@ -110,7 +112,7 @@ void cBezier::interpolateL(std::vector<Vector3> &points, int n) {
   gsl_spline_free(spline_steffen);
   gsl_interp_accel_free(acc);
 
-  delete x,y;
+  delete lgrid,tgrid;
   
 }
 
