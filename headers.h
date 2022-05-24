@@ -14,6 +14,8 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_linalg.h>
+#include <gsl/gsl_math.h>
+#include <gsl/gsl_spline.h>
 
 #include "cuba.h"
 #include <nlopt.h>

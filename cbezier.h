@@ -18,7 +18,8 @@ class cBezier {
     gsl_matrix * Mdot = gsl_matrix_alloc (4, 4);
     gsl_matrix * N = gsl_matrix_alloc (4, 4);
   
-    void interpolate(std::vector<Vector3> &, int);
+    void interpolateT(std::vector<Vector3> &, int);
+    void interpolateL(std::vector<Vector3> &, int);
     void initialize_bezier();
     void update_bezier();
     void axial_ef();
@@ -31,7 +32,7 @@ class cBezier {
     
 };
 
-void cBezier::interpolate(std::vector<Vector3> &points, int n) {
+void cBezier::interpolateT(std::vector<Vector3> &points, int n) {
   
   for(double t=1.0/n; t<(1.0+1.0/n); t+=1.0/n)
   {
@@ -44,6 +45,73 @@ void cBezier::interpolate(std::vector<Vector3> &points, int n) {
     
     points.push_back(Vector3(rx,ry,rz));
   }
+}
+
+double ds(double t, void *p)
+{
+	cBezier params = *(cBezier *) p;
+	
+  double tc = 1.0-t;
+  double DX[4] = {-3*tc*tc, 3*tc*(tc-2*t), -3*t*(t-2*tc), 3*t*t};
+  
+	double J = 0;
+	
+  loop(i,4)
+		loop(j,4)
+			J += DX[i]*gsl_matrix_get(params.PP, i, j)*DX[j];
+			
+	return sqrt(J);	
+}
+
+void cBezier::interpolateL(std::vector<Vector3> &points, int n) {
+  
+  double result, error; size_t nev;
+  
+  gsl_function B1;  B1.function = &ds;  B1.params = this;
+  gsl_integration_cquad_workspace * w1 = gsl_integration_cquad_workspace_alloc(100);
+
+  //std::map<double, double> TLmap;
+  size_t N = 10*n+1;
+  double *x = new double[N];
+  double *y = new double[N];
+  
+  int c=0;
+  
+  for(double t=0.0; t<(1.0+0.1/n); t+=0.1/n)
+  {
+    gsl_integration_cquad (&B1, 0.0, t, ABS_ERR, REL_ERR2,w1, &result, &error, &nev);
+    //TLmap.insert(std::make_pair(t, result));
+    
+    y[c] = t; x[c] = result;  c++;
+  }
+  
+  gsl_interp_accel *acc = gsl_interp_accel_alloc();
+  gsl_spline *spline_steffen = gsl_spline_alloc(gsl_interp_steffen, N);
+  gsl_spline_init(spline_steffen, x, y, N);
+
+  int Ni = n;
+  for (int i = 1; i <= Ni; ++i)
+  {
+    double xi = (1 - i*1.0 / Ni) * x[0] + (i*1.0 / Ni) * x[N-1];
+    double t = gsl_spline_eval(spline_steffen, xi, acc);
+
+    printf("%g : %g\n", xi, t);
+    
+    double tc = 1.0-t;
+    double X[4] = {tc*tc*tc, 3*tc*tc*t, 3*tc*t*t, t*t*t};
+    
+    double rx = X[0]*x[0] + X[1]*x[3] + X[2]*x[6] + X[3]*x[9];
+    double ry = X[0]*x[1] + X[1]*x[4] + X[2]*x[7] + X[3]*x[10];
+    double rz = X[0]*x[2] + X[1]*x[5] + X[2]*x[8] + X[3]*x[11];
+    
+    points.push_back(Vector3(rx,ry,rz));
+  }
+
+  gsl_spline_free(spline_steffen);
+  gsl_interp_accel_free(acc);
+
+  delete x,y;
+  
 }
 
 void cBezier::initialize_bezier() 
@@ -183,22 +251,6 @@ void cBezier::update_bezier()
   //printf("Length = %lf\n",length);
   
   loop(i,12) {v[i] = 0.0, f[i] = 0.0;}
-}
-
-double ds(double t, void *p)
-{
-	cBezier params = *(cBezier *) p;
-	
-  double tc = 1.0-t;
-  double DX[4] = {-3*tc*tc, 3*tc*(tc-2*t), -3*t*(t-2*tc), 3*t*t};
-  
-	double J = 0;
-	
-  loop(i,4)
-		loop(j,4)
-			J += DX[i]*gsl_matrix_get(params.PP, i, j)*DX[j];
-			
-	return sqrt(J);	
 }
 
 void cBezier::length_bezier()

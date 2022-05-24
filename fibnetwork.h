@@ -169,12 +169,13 @@ void fibnetwork::printlammps(char *filename, char *mode, int n)
   //int num_coord = 3*(n*nb+1);
   
   std::vector<Vector3> points;
-  points.push_back(Vector3(Bz_list[fibers[0][0]-1].x[0],Bz_list[fibers[0][0]-1].x[1],Bz_list[fibers[0][0]-1].x[2]));
-  
+    
   loop(i,nf) {
+    points.push_back(Vector3(Bz_list[fibers[i][0]-1].x[0],Bz_list[fibers[i][0]-1].x[1],Bz_list[fibers[i][0]-1].x[2]));
     for (auto k: fibers[i])
     {
-      Bz_list[k-1].interpolate(points,n);
+      Bz_list[k-1].interpolateT(points,n);
+      //Bz_list[k-1].interpolateL(points,n);
     }
   }  
   
