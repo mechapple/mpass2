@@ -498,6 +498,17 @@ void fibnetwork::update_sys(double dh, gsl_matrix *K0, gsl_matrix *K, int c2_fla
   loop(i,np) loop(j,3) gsl_matrix_set(Psys, i,j, gsl_matrix_get(K0, i,j) + dh*gsl_matrix_get(K, i,j) );
   loop(i,np) loop(j,3) gsl_matrix_set(Qsys, i,j, gsl_matrix_get(K0, np+i,j) + dh*gsl_matrix_get(K, np+i,j) );
   
+  //apply fixed constraints
+  for(std::map<int,double>::iterator it = fixed_dof.begin(); it != fixed_dof.end(); it++) {
+    
+    int i = (it->first-1)/3, j = (it->first-1)%3;
+    //std::cout << it->first << " -> " << it->second << " " << i << "," << j << std::endl;
+    
+    gsl_matrix_set(Psys, i,j, it->second);
+    gsl_matrix_set(Qsys, i,j, 0.0);
+        
+  }
+  
   loop(i,np) loop(j,3) CPx[i].comp[j] = gsl_matrix_get(Psys, i,j);
   loop(i,np) loop(j,3) CPv[i].comp[j] = gsl_matrix_get(Qsys, i,j);
   
@@ -520,7 +531,10 @@ void fibnetwork::update_sys(double dh, gsl_matrix *K0, gsl_matrix *K, int c2_fla
       if(x<0.1) x = 0.1; if(x>0.9) x = 0.9;
       
       //printf("%d %d %d %d %d %d %lf %lf\n",i,a,b,c,d,e,m,x);
-      loop(j,3) CPx[c-1].comp[j] = x*CPx[d-1].comp[j] + (1.0-x)*CPx[b-1].comp[j];
+      loop(j,3) {
+        CPx[c-1].comp[j] = x*CPx[d-1].comp[j] + (1.0-x)*CPx[b-1].comp[j];
+        gsl_matrix_set(Psys, c-1,j, CPx[c-1].comp[j]);
+      }
     }
   
   loop(i,nb) {    
