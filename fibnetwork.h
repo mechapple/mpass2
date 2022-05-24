@@ -174,8 +174,8 @@ void fibnetwork::printlammps(char *filename, char *mode, int n)
     points.push_back(Vector3(Bz_list[fibers[i][0]-1].x[0],Bz_list[fibers[i][0]-1].x[1],Bz_list[fibers[i][0]-1].x[2]));
     for (auto k: fibers[i])
     {
-      Bz_list[k-1].interpolateT(points,n);
-      //Bz_list[k-1].interpolateL(points,n);
+      //Bz_list[k-1].interpolateT(points,n);
+      Bz_list[k-1].interpolateL(points,n);
     }
   }  
   

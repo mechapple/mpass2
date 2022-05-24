@@ -97,7 +97,7 @@ void cBezier::interpolateL(std::vector<Vector3> &points, int n) {
     double li = (1 - i*1.0 / Ni) * lgrid[0] + (i*1.0 / Ni) * lgrid[N-1];
     double t = gsl_spline_eval(spline_steffen, li, acc);
 
-    printf("%g : %g\n", li, t);
+    //printf("%g : %g\n", li, t);
     
     double tc = 1.0-t;
     double X[4] = {tc*tc*tc, 3*tc*tc*t, 3*tc*t*t, t*t*t};
