@@ -5,6 +5,7 @@ class cBezier {
     int CP[4], type, id, fiber;
     double energy, length, length0, axialE, bendE, cohE, kinE;
     int leftB, rightB;
+    std::vector<Vector4> discrete;    
     
     gsl_matrix * P = gsl_matrix_alloc (4, 3);
     gsl_matrix * PB = gsl_matrix_alloc (3, 4);
@@ -71,28 +72,34 @@ void cBezier::interpolateL(std::vector<Vector3> &points, int n) {
   gsl_integration_cquad_workspace * w1 = gsl_integration_cquad_workspace_alloc(100);
 
   //std::map<double, double> TLmap;
-  size_t N = 10*n+1;
-  double *lgrid = new double[N];
-  double *tgrid = new double[N];
+  size_t N = 10*n;
+  
+  //std::vector<double> lgrid, tgrid;
+  double *lgrid = new double[N+1];
+  double *tgrid = new double[N+1];
   
   int c=0;
   
-  for(double t=0.0; t<(1.0+0.1/n); t+=0.1/n)
+  //for(double t=0.0; t<(1.0+0.1/n); t+=0.1/n)
+  for(int i=0; i<=N; i++)
   {
+    double t = i*1.0/N;
     gsl_integration_cquad (&B1, 0.0, t, ABS_ERR, REL_ERR2,w1, &result, &error, &nev);
     //TLmap.insert(std::make_pair(t, result));
     
+    //tgrid.push_back(t); lgrid.push_back(result); c++;
     tgrid[c] = t; lgrid[c] = result;  c++;
   }
   
   gsl_integration_cquad_workspace_free (w1);
   
   gsl_interp_accel *acc = gsl_interp_accel_alloc();
-  gsl_spline *spline_steffen = gsl_spline_alloc(gsl_interp_steffen, N);
-  gsl_spline_init(spline_steffen, lgrid, tgrid, N);
+  gsl_spline *spline_steffen = gsl_spline_alloc(gsl_interp_steffen, N+1);
+  gsl_spline_init(spline_steffen, lgrid, tgrid, N+1);
 
   int Ni = n;
-  for (int i = 1; i <= Ni; ++i)
+  //for (int i = 1; i <= Ni; ++i)
+  for (float i = 0.5; i < Ni; ++i)
   {
     double li = (1 - i*1.0 / Ni) * lgrid[0] + (i*1.0 / Ni) * lgrid[N-1];
     double t = gsl_spline_eval(spline_steffen, li, acc);
@@ -107,6 +114,7 @@ void cBezier::interpolateL(std::vector<Vector3> &points, int n) {
     double rz = X[0]*x[2] + X[1]*x[5] + X[2]*x[8] + X[3]*x[11];
     
     points.push_back(Vector3(rx,ry,rz));
+    discrete.push_back(Vector4(t,rx,ry,rz));
   }
 
   gsl_spline_free(spline_steffen);

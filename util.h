@@ -35,6 +35,20 @@ struct iVector3 {
   }
 };
 
+struct Vector4 {
+  double comp[4];
+  
+  Vector4(double t, double x, double y, double z)
+  {
+    comp[0] = t; comp[1] = x;  comp[2] = y;  comp[3] = z;
+  }
+  
+  Vector4()
+  {
+    comp[0] = 0;  comp[1] = 0;  comp[2] = 0;  comp[3] = 0;
+  }
+};
+
 struct iVector5 {
   int comp[5];
   
