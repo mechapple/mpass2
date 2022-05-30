@@ -30,7 +30,7 @@ typedef std::stringstream sss;
 #define RTOL 1e-8
 
 #define NVEC 1
-#define EPSREL 1e-6
+#define EPSREL 1e-4
 #define EPSABS 0
 #define VERBOSE 0
 #define LAST 4

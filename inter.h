@@ -87,12 +87,14 @@ static int I1234(const int *ndim, const double xx[],
       
     }
   
+  C = sqrt(C);
+  double fac = sqrt(J1*J2);
   for(int i=0;i<12;i++)
   {
-    F[i] = sqrt(J1*J2)*cP[i]*f(C);
-    F[i+12] = sqrt(J2/J1)*JP[i]*V(C);
-    F[i+24] = sqrt(J1*J2)*cQ[i]*f(C);
-    F[i+36] = sqrt(J1/J2)*JQ[i]*V(C);
+    F[i] = fac*cP[i]*f(C);
+    F[i+12] = (fac/J1)*JP[i]*V(C);
+    F[i+24] = fac*cQ[i]*f(C);
+    F[i+36] = (fac/J2)*JQ[i]*V(C);
   }
 
   return 0;
@@ -134,5 +136,115 @@ double inter_energy(cBezier *b1, cBezier *b2)
     b2->f[i] += (integralc[i+24]+integralc[i+36]);
   }
   
+  if(0)
+  {
+    loop(i,12) {
+      printf("%e ",integralc[i]+integralc[i+12]);
+      if((i+1)%4==0) printf("\n");
+    }
+    printf("\n");
+    
+    loop(i,12) {
+      printf("%e ",integralc[i+24]+integralc[i+36]);
+      if((i+1)%4==0) printf("\n");
+    }
+    printf("\n");
+  }
+  
   return integral[0];
 }
+
+double inter_energy_discrete(cBezier *b1, cBezier *b2)
+{
+  cBezier2 bpair;
+  
+  gsl_matrix_memcpy(bpair.P, b1->P);
+  gsl_matrix_memcpy(bpair.Q, b2->P);
+  
+  gsl_matrix_memcpy(bpair.PP, b1->PP);
+  gsl_matrix_memcpy(bpair.QQ, b2->PP);
+  
+  gsl_blas_dgemm (CblasNoTrans, CblasTrans, 1.0, bpair.P, bpair.Q, 0.0, bpair.PQ); 
+  
+  double F[48] = {0};
+  double fac = (b1->length/b1->discrete.size())*(b2->length/b2->discrete.size());
+
+  double c,U12 = 0;
+  loop(i,b1->discrete.size())
+    loop(j,b2->discrete.size()) {
+      c = 0;
+      loop2(k,1,4) {
+        double d = b1->discrete[i].comp[k] - b2->discrete[j].comp[k]; c += d*d;
+      }
+      c = sqrt(c);
+      
+      U12 += V(c);    
+      
+      double t1 = b1->discrete[i].comp[0], t2 = b2->discrete[j].comp[0];
+      double t1c = 1.0-t1, t2c = 1.0-t2;
+    
+      double Xv[4] = {t1c*t1c*t1c, 3*t1c*t1c*t1, 3*t1c*t1*t1, t1*t1*t1};
+      double Yv[4] = {t2c*t2c*t2c, 3*t2c*t2c*t2, 3*t2c*t2*t2, t2*t2*t2};
+    
+      double DXv[4] = {-3*t1c*t1c, 3*t1c*(t1c-2*t1), 3*t1*(2*t1c-t1), 3*t1*t1};
+      double DYv[4] = {-3*t2c*t2c, 3*t2c*(t2c-2*t2), 3*t2*(2*t2c-t2), 3*t2*t2};
+      
+      double J1 = 0, J2 = 0, C = 0;
+    
+      //double F[48] = {0};
+      double cP[12] = {0},cQ[12] = {0},JP[12] = {0}, JQ[12] = {0};
+    
+      for(int ii=0;ii<4;ii++)
+        for(int jj=0;jj<3;jj++){
+          //cP[ii*3+jj] = 0.0; cQ[ii*3+jj] = 0.0; JP[ii*3+jj] = 0.0; JQ[ii*3+jj] = 0.0;
+          
+          for(int k=0;k<4;k++) {
+            cP[ii*3+jj] += Xv[ii] * ( Xv[k] * gsl_matrix_get (b1->P, k, jj) - Yv[k] * gsl_matrix_get (b2->P, k, jj) ) ;
+            cQ[ii*3+jj] += Yv[ii] * ( Yv[k] * gsl_matrix_get (b2->P, k, jj) - Xv[k] * gsl_matrix_get (b1->P, k, jj) ) ;
+            
+            JP[ii*3+jj] += DXv[ii] * DXv[k] * gsl_matrix_get (b1->P, k, jj) ;
+            JQ[ii*3+jj] += DYv[ii] * DYv[k] * gsl_matrix_get (b2->P, k, jj) ;
+            
+          }
+        }
+      
+      for(int ii=0;ii<4;ii++)
+        for(int jj=0;jj<4;jj++){
+          J1 += DXv[ii]*gsl_matrix_get (b1->PP, ii, jj)*DXv[jj];
+          J2 += DYv[ii]*gsl_matrix_get (b2->PP, ii, jj)*DYv[jj];          
+          
+          //C += Xv[ii]*gsl_matrix_get (b1->PP, ii, jj)*Xv[jj] 
+            //+ Yv[ii]*gsl_matrix_get (b2->PP, ii, jj)*Yv[jj] 
+            //-2*Xv[ii]*gsl_matrix_get (bpair.PQ, ii, jj)*Yv[jj];
+        }
+      
+      //C = sqrt(C);
+      
+      //printf("%lf %lf\n",c,C);
+      for(int ii=0;ii<12;ii++)
+      {
+        F[ii] += fac*cP[ii]*f(c);
+        F[ii+12] += (fac/J1)*JP[ii]*V(c);
+        F[ii+24] += fac*cQ[ii]*f(c);
+        F[ii+36] += (fac/J2)*JQ[ii]*V(c);
+      }
+  }
+  
+  if(0)
+  {
+    loop(i,12) {
+      printf("%e ",F[i]+F[i+12]);
+      if((i+1)%4==0) printf("\n");
+    }
+    printf("\n");
+    
+    loop(i,12) {
+      printf("%e ",F[i+24]+F[i+36]);
+      if((i+1)%4==0) printf("\n");
+    }
+    printf("\n");
+  }
+    
+  return U12*fac;
+}
+

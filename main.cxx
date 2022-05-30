@@ -30,7 +30,7 @@ int main(int argc, char **argv)
   fn.readfile(argv[1]);
   //fn.printdata();
   fn.printlammps_cps((char*) "Output_cps.lammpstrj",(char*) "w");
-  fn.printlammps((char*) "Output.lammpstrj",(char*) "w", 20);
+  fn.printlammps((char*) "Output.lammpstrj",(char*) "w", Ndis);
 
   //clock_t begin1,end1;
   //begin1 = clock();
@@ -40,9 +40,12 @@ int main(int argc, char **argv)
   //double time1 = (double)(end1 - begin1) / CLOCKS_PER_SEC;
   //printf ("time = %lf\n",time1);
   
-  //fn.minimize();
-  fn.integrate_runge_kutta_4(10000,1e-4);
+  fn.compute_ef();
   
+  if(1) loop(i,10) {
+    fn.minimize();
+    fn.integrate_runge_kutta_4(1e2,1e-1);
+  }
   
 	return 0;
 }
