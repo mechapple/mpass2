@@ -62,7 +62,7 @@
 #define loop(x,n) for(int x = 0; x < n; ++x)
 #define loop2(x,a,b) for(int x = a; x < b; ++x)
 
-int NPOINTS = 8;
+#define NPOINTS 501
 
 struct Vector3
 {
@@ -121,19 +121,7 @@ struct Point
     double y;
 };
 
-Point points2[] =
-{
-    { 254 , 102 },
-    { 226 , 63  },
-    { 185 , 49  },
-    { 146 , 74  },
-    { 142 , 119 },
-    { 117 , 169 },
-    { 86  , 214 },
-    { 40  , 200 },
-};
-
-Point points1[8];
+Point points1[NPOINTS];
 
 //
 // cubicBezier
@@ -260,6 +248,8 @@ int main(int argc, char **argv)
 
   nlopt_destroy(opt);
 
+  std::vector<Vector3> points;
+
   if (1) //create data file for LAMMPS
   {
     // interpolate
@@ -312,7 +302,6 @@ int main(int argc, char **argv)
     }
 
     ///////////
-    std::vector<Vector3> points;
 
     gsl_interp_accel *acc = gsl_interp_accel_alloc();
     gsl_spline *spline_steffen = gsl_spline_alloc(gsl_interp_steffen, N + 1);
@@ -411,8 +400,8 @@ int main(int argc, char **argv)
   if (1) //create bezier fit
   {
     loop(i,NPOINTS) {
-      points1[i].x = points2[i].x;
-      points1[i].y = points2[i].y;
+      points1[i].x = points[i].comp[0];
+      points1[i].y = points[i].comp[1];
     }
 
     column_vector params(4);
