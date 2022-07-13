@@ -133,7 +133,7 @@ Point points2[] =
     { 40  , 200 },
 };
 
-Point points1[NPOINTS];
+Point points1[8];
 
 //
 // cubicBezier
@@ -412,7 +412,7 @@ int main(int argc, char **argv)
   {
     loop(i,NPOINTS) {
       points1[i].x = points2[i].x;
-      points1[i].y = points2[i].x;
+      points1[i].y = points2[i].y;
     }
 
     column_vector params(4);
