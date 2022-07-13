@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "/opt/homebrew/include/dlib/optimization.h"
+#include <dlib/optimization.h"
 
 #define _DMAX 1000000
 
