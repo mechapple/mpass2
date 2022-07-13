@@ -121,7 +121,7 @@ struct Point
     double y;
 };
 
-static Point points[] =
+static Point points1[] =
 {
     { 254 , 102 },
     { 226 , 63  },
@@ -178,18 +178,18 @@ double dist(double dx1, double dy1, double dx2, double dy2)
 // parameters, attempting to get the lowest return value it can.
 double rateCurve(const column_vector& params)
 {
-    double p1x = points[0].x;
-    double p1y = points[0].y;
+    double p1x = points1[0].x;
+    double p1y = points1[0].y;
     double c1x = params(0,0);
     double c1y = params(1,0);
     double c2x = params(2,0);
     double c2y = params(3,0);
-    double p2x = points[NPOINTS-1].x;
-    double p2y = points[NPOINTS-1].y;
+    double p2x = points1[NPOINTS-1].x;
+    double p2y = points1[NPOINTS-1].y;
 
     double distances = 0;
 
-    for (Point target : points)
+    for (Point target : points1)
     {
         double distance = _DMAX;
 
@@ -409,7 +409,7 @@ int main(int argc, char **argv)
   if (1) //create bezier fit
   {
     column_vector params(4);
-    params = points[NPOINTS-1].x, points[NPOINTS-1].y, points[0].x, points[0].y;
+    params = points1[NPOINTS-1].x, points1[NPOINTS-1].y, points1[0].x, points1[0].y;
 
     dlib::find_min_using_approximate_derivatives(
             dlib::cg_search_strategy(),
@@ -418,14 +418,14 @@ int main(int argc, char **argv)
             params,
             -1);
 
-    printf("p1x = %f;\n", points[0].x);
-    printf("p1y = %f;\n", points[0].y);
+    printf("p1x = %f;\n", points1[0].x);
+    printf("p1y = %f;\n", points1[0].y);
     printf("c1x = %f;\n", params(0,0));
     printf("c1y = %f;\n", params(1,0));
     printf("c2x = %f;\n", params(2,0));
     printf("c2y = %f;\n", params(3,0));
-    printf("p2x = %f;\n", points[NPOINTS-1].x);
-    printf("p2y = %f;\n", points[NPOINTS-1].y);
+    printf("p2x = %f;\n", points1[NPOINTS-1].x);
+    printf("p2y = %f;\n", points1[NPOINTS-1].y);
   }
 
   delete[] x, df;
