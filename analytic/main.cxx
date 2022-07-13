@@ -62,6 +62,8 @@
 #define loop(x,n) for(int x = 0; x < n; ++x)
 #define loop2(x,a,b) for(int x = a; x < b; ++x)
 
+int NPOINTS = 8;
+
 struct Vector3
 {
   double comp[3];
@@ -182,8 +184,8 @@ double rateCurve(const column_vector& params)
     double c1y = params(1,0);
     double c2x = params(2,0);
     double c2y = params(3,0);
-    double p2x = points[7].x;
-    double p2y = points[7].y;
+    double p2x = points[NPOINTS-1].x;
+    double p2y = points[NPOINTS-1].y;
 
     double distances = 0;
 
@@ -407,7 +409,7 @@ int main(int argc, char **argv)
   if (1) //create bezier fit
   {
     column_vector params(4);
-    params = points[7].x, points[7].y, points[0].x, points[0].y;
+    params = points[NPOINTS-1].x, points[NPOINTS-1].y, points[0].x, points[0].y;
 
     dlib::find_min_using_approximate_derivatives(
             dlib::cg_search_strategy(),
@@ -422,8 +424,8 @@ int main(int argc, char **argv)
     printf("c1y = %f;\n", params(1,0));
     printf("c2x = %f;\n", params(2,0));
     printf("c2y = %f;\n", params(3,0));
-    printf("p2x = %f;\n", points[7].x);
-    printf("p2y = %f;\n", points[7].y);
+    printf("p2x = %f;\n", points[NPOINTS-1].x);
+    printf("p2y = %f;\n", points[NPOINTS-1].y);
   }
 
   delete[] x, df;
