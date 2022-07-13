@@ -164,10 +164,10 @@ Point cubicBezier(double p1x, double p1y, double c1x, double c1y,
 
 // Any distance function can be used for optimisation.  This one, where we want
 // to find the least-squares is most common. 
-double dist(double x1, double y1, double x2, double y2)
+double dist(double dx1, double dy1, double dx2, double dy2)
 {
-    double x = x2 - x1;
-    double y = y2 - y1;
+    double x = dx2 - dx1;
+    double y = dy2 - dy1;
 
     return (x * x) + (y * y);
 }
