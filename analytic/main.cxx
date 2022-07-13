@@ -121,7 +121,7 @@ struct Point
     double y;
 };
 
-Point points1[] =
+Point points2[] =
 {
     { 254 , 102 },
     { 226 , 63  },
@@ -132,6 +132,8 @@ Point points1[] =
     { 86  , 214 },
     { 40  , 200 },
 };
+
+Point points1[NPOINTS];
 
 //
 // cubicBezier
@@ -408,12 +410,10 @@ int main(int argc, char **argv)
 
   if (1) //create bezier fit
   {
-    Point points2[NPOINTS];
     loop(i,NPOINTS) {
-      points2[i].x = points1[i].x;
-      points2[i].y = points1[i].x;
+      points1[i].x = points2[i].x;
+      points1[i].y = points2[i].x;
     }
-
 
     column_vector params(4);
     params = points1[NPOINTS-1].x, points1[NPOINTS-1].y, points1[0].x, points1[0].y;
