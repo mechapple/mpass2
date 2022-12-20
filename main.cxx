@@ -20,7 +20,7 @@
  * 
  * 
  */
-//g++ -O3 -g -frounding-math main.cxx -o main -lm -lgsl -lgslcblas -lcuba -lnlopt
+//g++ -O3 -g -std=c++11 -frounding-math main.cxx -o main -lm -lgsl -lgslcblas -lcuba -lnlopt
 
 #include "headers.h"
 
@@ -30,7 +30,7 @@ int main(int argc, char **argv)
   fn.readfile(argv[1]);
   //fn.printdata();
   fn.printlammps_cps((char*) "Output_cps.lammpstrj",(char*) "w");
-  fn.printlammps((char*) "Output.lammpstrj",(char*) "w", Ndis);
+  fn.printlammps((char*) "Output.lammpstrj",(char*) "w", 20);
 
   //clock_t begin1,end1;
   //begin1 = clock();
@@ -40,12 +40,12 @@ int main(int argc, char **argv)
   //double time1 = (double)(end1 - begin1) / CLOCKS_PER_SEC;
   //printf ("time = %lf\n",time1);
   
-  fn.compute_ef();
-  
-  if(1) loop(i,10) {
-    fn.minimize();
-    fn.integrate_runge_kutta_4(1e2,1e-1);
+  loop(i,20) {
+	fn.minimize();
+  //fn.integrate_runge_kutta_4(10000,1e-4);
+	integrate(fn,1e2,2e-3);
   }
-  
-	return 0;
+  //fn.printlammps_cps((char*) "Output_cps.lammpstrj",(char*) "a");
+
+  return 0;
 }

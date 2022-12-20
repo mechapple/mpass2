@@ -1,11 +1,3 @@
-#define alpha0 0.1
-#define Nmin 5
-#define finc 1.1
-#define fdec 0.5
-#define fa 0.99
-
-#define Ndis 500
-
 class fibnetwork {
   
   public:
@@ -14,7 +6,6 @@ class fibnetwork {
     double axialE, bendE, cohE, kinE, totE, time;
     
     std::map<int,double> fixed_dof;
-    std::vector<int> mobile_dof;
     std::vector<iVector3> C1_cps;
     std::vector<iVector5> C2_cps;
     std::vector<Vector3> CPx,CPv,CPf,CPa;
@@ -34,7 +25,7 @@ class fibnetwork {
     void minimize();
     void computeK(gsl_matrix *);
     void update_sys(double,gsl_matrix *,gsl_matrix *, int);
-    void integrate_runge_kutta_4(int, double);
+    void integrate_runge_kutta_4(int, double);  
 };
 
 void fibnetwork::readfile(char *filename)
@@ -75,11 +66,7 @@ void fibnetwork::readfile(char *filename)
     std::getline(infile, line); ss << line; 
     ss >> tmp >> x[0] >> x[1] >> x[2] >> fdof[0] >> fdof[1] >> fdof[2];
     
-    loop(j,3) {
-      mobile_dof.push_back(fdof[j]);
-      if(fdof[j]==0) 
-        fixed_dof.insert(std::make_pair((tmp-1)*3+j+1, x[j] ));
-    }
+    loop(j,3) if(fdof[j]==0) fixed_dof.insert(std::make_pair((tmp-1)*3+j+1, x[j] ));
     
     double rn = RTOL*((double) std::rand() / (RAND_MAX));
     
@@ -182,12 +169,11 @@ void fibnetwork::printlammps(char *filename, char *mode, int n)
   //int num_coord = 3*(n*nb+1);
   
   std::vector<Vector3> points;
-    
+  points.push_back(Vector3(Bz_list[fibers[0][0]-1].x[0],Bz_list[fibers[0][0]-1].x[1],Bz_list[fibers[0][0]-1].x[2]));
+  
   loop(i,nf) {
-    //points.push_back(Vector3(Bz_list[fibers[i][0]-1].x[0],Bz_list[fibers[i][0]-1].x[1],Bz_list[fibers[i][0]-1].x[2]));
     for (auto k: fibers[i])
     {
-      //Bz_list[k-1].interpolateT(points,n);
       Bz_list[k-1].interpolateL(points,n);
     }
   }  
@@ -200,7 +186,7 @@ void fibnetwork::printlammps(char *filename, char *mode, int n)
   fprintf(fp, "ITEM: ATOMS id mol type q xu yu zu\n");
   
   loop(i,points.size()) {
-    fprintf(fp, "%d %d 1 0.00 %.6f %.6f %.6f\n", i+1, i/(n+1)+1, points[i].comp[0], points[i].comp[1], points[i].comp[2]);
+    fprintf(fp, "%d 1 1 0.00 %.6f %.6f %.6f\n", i+1, points[i].comp[0], points[i].comp[1], points[i].comp[2]);
   }
   
   fclose(fp);
@@ -211,12 +197,9 @@ void fibnetwork::compute_ef()
   axialE = 0.0; bendE = 0.0; cohE = 0.0; kinE = 0.0;
   loop(i,np) loop(j,3) CPf[i].comp[j] = 0.0;
   
-  double cohE2=0;
   loop(i,nb) loop2(j,i,nb)
-      if (Bz_list[i].fiber != Bz_list[j].fiber) {
+      if (Bz_list[i].fiber != Bz_list[j].fiber)
         cohE += inter_energy(&Bz_list[i],&Bz_list[j]);
-        //cohE2 += inter_energy_discrete(&Bz_list[i],&Bz_list[j]);
-      }
   
   loop(i,nf) {
     for (auto k: fibers[i])
@@ -245,7 +228,7 @@ void fibnetwork::compute_ef()
   
   totE = axialE + bendE + cohE + kinE;
   //constraint_energy();  
-  //printf("Energies: %lf %lf %lf %lf\n", axialE, bendE, cohE, cohE2);
+  //printf("Energies: %lf %lf %lf %lf %lf\n", axialE, bendE, cohE, kinE, totE);
   
 }
 
@@ -274,8 +257,8 @@ double VdV(unsigned n, const double *input, double *grad, void *fn_data)
     loop(i,FN->np) loop(j,3) grad[i*3+j] = -FN->CPf[i].comp[j] ;
   }
   
-  FN->printlammps_cps((char*) "Output_cps.lammpstrj",(char*) "a");
-  FN->printlammps((char*) "Output.lammpstrj",(char*) "a", Ndis);
+  //FN->printlammps_cps((char*) "Output_cps.lammpstrj",(char*) "a");
+  //FN->printlammps((char*) "Output.lammpstrj",(char*) "a",20);
   
   return (FN->axialE + FN->bendE + FN->cohE);
 }
@@ -440,7 +423,8 @@ void fibnetwork::minimize()
       std::cout << "Optimization result: " << nlopt_result_to_string(status) << std::endl;
     }
     else
-      printf("found minimum at %0.10g\n", minf);  
+      printf("found minimum at %0.10g\n", minf);
+      loop(i,np) loop(j,3) CPx[i].comp[j] = x[i*3+j];  
   }
   
   nlopt_destroy(opt);
@@ -460,14 +444,18 @@ void fibnetwork::minimize()
     //printf("%d %d %d \n",a,b,c);
   //}
   
-  delete [] lb,ub,x,df,fctol;
+  delete [] lb;
+  delete [] ub;
+  delete [] x;
+  delete [] df;
+  delete [] fctol;
 }
 
 void fibnetwork::assemble_matrices()
-{
-  GM = gsl_matrix_alloc (np, np); gsl_matrix_set_zero(GM);
-  GMdot = gsl_matrix_alloc (np, np); gsl_matrix_set_zero(GMdot);
-  GN = gsl_matrix_alloc (np, np); gsl_matrix_set_zero(GN);
+{ 
+  gsl_matrix_set_zero(GM);
+  gsl_matrix_set_zero(GMdot);
+  gsl_matrix_set_zero(GN);
   
   double val;
   loop(i,nb) {
@@ -485,13 +473,16 @@ void fibnetwork::assemble_matrices()
     //gsl_matrix_print(Bz_list[i].M,"Mi");
     //gsl_matrix_print(GM,"GMi");
   }
+  
+  
 }
 
 void fibnetwork::computeK(gsl_matrix *K)
 {
   gsl_matrix *Minv = gsl_matrix_alloc (np, np);
   
-  assemble_matrices(); compute_ef();
+  assemble_matrices(); 
+  compute_ef();
   
   loop(i,np) loop(j,3) gsl_matrix_set(Fsys, i,j, CPf[i].comp[j]);
   
@@ -500,9 +491,12 @@ void fibnetwork::computeK(gsl_matrix *K)
   
   gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, GN, Psys, 1.0, Fsys);
   gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, -1.0, GMdot, Qsys, 1.0, Fsys);
-  gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, Minv, Fsys, 0.0, Rsys);
   
   loop(i,np) loop(j,3) gsl_matrix_set(K, i,j, gsl_matrix_get(Qsys, i,j) );
+  
+  gsl_matrix_scale(Qsys, -RKdamp);	gsl_matrix_add(Fsys, Qsys);
+  
+  gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, Minv, Fsys, 0.0, Rsys);
   loop(i,np) loop(j,3) gsl_matrix_set(K, np+i,j, gsl_matrix_get(Rsys, i,j) );
 
   gsl_matrix_free(Minv);
@@ -513,16 +507,6 @@ void fibnetwork::update_sys(double dh, gsl_matrix *K0, gsl_matrix *K, int c2_fla
   //update Psys, Qsys, CPx, CPv
   loop(i,np) loop(j,3) gsl_matrix_set(Psys, i,j, gsl_matrix_get(K0, i,j) + dh*gsl_matrix_get(K, i,j) );
   loop(i,np) loop(j,3) gsl_matrix_set(Qsys, i,j, gsl_matrix_get(K0, np+i,j) + dh*gsl_matrix_get(K, np+i,j) );
-  
-  //apply fixed constraints
-  for(std::map<int,double>::iterator it = fixed_dof.begin(); it != fixed_dof.end(); it++) {
-    
-    int i = (it->first-1)/3, j = (it->first-1)%3;
-    //std::cout << it->first << " -> " << it->second << " " << i << "," << j << std::endl;
-    
-    gsl_matrix_set(Psys, i,j, it->second);
-    gsl_matrix_set(Qsys, i,j, 0.0);
-  }
   
   loop(i,np) loop(j,3) CPx[i].comp[j] = gsl_matrix_get(Psys, i,j);
   loop(i,np) loop(j,3) CPv[i].comp[j] = gsl_matrix_get(Qsys, i,j);
@@ -542,14 +526,11 @@ void fibnetwork::update_sys(double dh, gsl_matrix *K0, gsl_matrix *K, int c2_fla
       double m = sqrt(cross_mag(db,eb)/cross_mag(db,ad));
       double x = 1.0/(1.0+m);
       
-      //EDIT1 to avoid singularities
+      //EDIT to avoid singularities
       if(x<0.1) x = 0.1; if(x>0.9) x = 0.9;
       
       //printf("%d %d %d %d %d %d %lf %lf\n",i,a,b,c,d,e,m,x);
-      loop(j,3) {
-        CPx[c-1].comp[j] = x*CPx[d-1].comp[j] + (1.0-x)*CPx[b-1].comp[j];
-        gsl_matrix_set(Psys, c-1,j, CPx[c-1].comp[j]);
-      }
+      loop(j,3) CPx[c-1].comp[j] = x*CPx[d-1].comp[j] + (1.0-x)*CPx[b-1].comp[j];
     }
   
   loop(i,nb) {    
@@ -586,11 +567,6 @@ void fibnetwork::integrate_runge_kutta_4(int nsteps, double h)
   
   printf("Time AxialE BendE CohE kinE TotE\n");
   
-  double alpha = alpha0;
-  double dtmax = h*100;
-  double time = 0.0;
-  int nstep = 0;
-  
   for(int step=0; step<nsteps; step++)
   {
     //gsl_matrix_memcpy(Psys0,Psys);
@@ -613,52 +589,10 @@ void fibnetwork::integrate_runge_kutta_4(int nsteps, double h)
     {
       assemble_matrices();
       compute_ef();
-      
-      //printf("\nDof mobility");
-      //loop(i,np) {
-        //printf("\n%d %d %d %d",i+1,mobile_dof[i*3],mobile_dof[i*3+1],mobile_dof[i*3+2]); 
-      //}
-      //FIRE min:
-      
-      double P=0, ff = 0, vv = 0;
-      loop(i,np) loop(j,3) if(mobile_dof[i*3+j]) {
-        P+= CPf[i].comp[j]*CPv[i].comp[j];
-        ff += CPf[i].comp[j]*CPf[i].comp[j];
-        vv += CPv[i].comp[j]*CPv[i].comp[j];
-      }
-      
-      double cv = sqrt(vv/ff);
-      
-      loop(i,np) loop(j,3) if(mobile_dof[i*3+j]) {
-        CPv[i].comp[j] = CPv[i].comp[j]*(1.0-alpha) + alpha*CPf[i].comp[j]*cv;
-      } 
-      
-      if(P>0){ 
-        nstep++;
-        if (nstep > Nmin){
-          h = std::min(h*finc,dtmax);
-          alpha *= fa;
-        }
-      }
-      else
-      {
-        nstep=0;
-        
-        h *= fdec;
-        alpha = alpha0;
-        loop(i,np) loop(j,3) if(mobile_dof[i*3+j]) {
-          CPv[i].comp[j] = 0.0;
-          gsl_matrix_set(Qsys, i,j, 0.0);
-        }
-      }
-      
-      ////
-      
       printlammps_cps((char*) "Output_cps.lammpstrj",(char*) "a");
-      printlammps((char*) "Output.lammpstrj",(char*) "a",Ndis);
-      time += h;
-      printf("%d %lf %lf %lf %lf %lf %lf\n",step,time, axialE, bendE, cohE, kinE, totE);
-      printf("FIRE: P=%e h=%e alpha=%lf nstep=%d vv = %e ff = %e\n",P,h,alpha,nstep,vv,ff);
+      printlammps((char*) "Output.lammpstrj",(char*) "a",20);
+      time = step*h; tstep = step;
+      printf("%lf %lf %lf %lf %lf %lf\n",time, axialE, bendE, cohE, kinE, totE);
     }
   }
   

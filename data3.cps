@@ -10,10 +10,6 @@ Fiber-network Description
 -10.0 10.0 ylo yhi
 -10.0 10.0 zlo zhi
 
-Masses
-
-1 1.0
-
 BezConstants
 
 1 10.0 0.5 1.0

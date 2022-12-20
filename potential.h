@@ -1,5 +1,5 @@
-#define LJ_EPS 0.50
-#define LJ_SIG 0.008
+#define LJ_EPS 5.0
+#define LJ_SIG 1.0
 
 double V(double r) {
   double fsr = fabs(LJ_SIG/r);

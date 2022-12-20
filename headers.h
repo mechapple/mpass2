@@ -14,6 +14,9 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_linalg.h>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_odeiv2.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_spline.h>
 
@@ -30,7 +33,7 @@ typedef std::stringstream sss;
 #define RTOL 1e-8
 
 #define NVEC 1
-#define EPSREL 1e-4
+#define EPSREL 1e-6
 #define EPSABS 0
 #define VERBOSE 0
 #define LAST 4
@@ -46,8 +49,11 @@ double EA[BTYPES] = {0}; //Axial elastic constants (EA)
 double EI[BTYPES] = {0}; //Bending stiffness constants (EI)
 double rho[BTYPES] = {0}; //mass density of bezier
 double cfac = 0;
+#define RKdamp 1.0
+
 
 #include "util.h"
 #include "cbezier.h"
 #include "inter.h"
 #include "fibnetwork.h"
+#include "integrate.h"

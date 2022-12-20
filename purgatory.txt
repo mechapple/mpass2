@@ -1,0 +1,42 @@
+int func0(double t, const double W[], double f[], void *fn_data)
+{
+  (void)(t); /* avoid unused parameter warning */
+  fibnetwork *FN = (fibnetwork *) fn_data;
+  fibnetwork fn_local;
+  
+  int np = FN->np;	fn_local.np = FN->np;
+  int nb = FN->nb;	fn_local.nb = FN->nb;
+  int nf = FN->nf;	fn_local.nf = FN->nf;
+  
+  loop(i,np) { fn_local.CPx.push_back(Vector3(W[i*3],W[i*3+1],W[i*3+2])); fn_local.CPv.push_back(Vector3(W[(i+np)*3],W[(i+np)*3+1],W[(i+np)*3+2])); fn_local.CPf.push_back(Vector3(0,0,0)); }
+  loop(i,nb) fn_local.Bz_list.push_back(FN->Bz_list[i]);
+  loop(i,nf) fn_local.fibers.push_back(FN->fibers[i]);
+  
+      
+  loop(i,nb) {
+    loop(j,4) {
+      int cpid = fn_local.Bz_list[i].CP[j]-1;
+      loop(k,3) 
+        fn_local.Bz_list[i].x[j*3+k] = fn_local.CPx[cpid].comp[k];
+    }
+    fn_local.Bz_list[i].update_bezier();
+  }
+  
+  fn_local.Psys = gsl_matrix_alloc (np, 3);
+  fn_local.Qsys = gsl_matrix_alloc (np, 3);
+  fn_local.Rsys = gsl_matrix_alloc (np, 3);
+  fn_local.Fsys = gsl_matrix_alloc (np, 3);
+  
+  loop(i,np) loop(j,3) {
+    gsl_matrix_set(fn_local.Psys, i,j, fn_local.CPx[i].comp[j]);
+    gsl_matrix_set(fn_local.Qsys, i,j, fn_local.CPv[i].comp[j]);
+  }
+  
+  gsl_matrix *K1 = gsl_matrix_alloc (2*np, 3);
+  
+  fn_local.computeK(K1);
+
+  loop(i,2*np) loop(j,3) f[i*3+j] = gsl_matrix_get(K1, i,j);
+  
+  return GSL_SUCCESS;
+}

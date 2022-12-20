@@ -3,9 +3,10 @@ class cBezier {
   public:
     double x[12],v[12],f[12],a[12];
     int CP[4], type, id, fiber;
-    double energy, length, length0, axialE, bendE, cohE, kinE;
+    double energy, length, axialE, bendE, cohE, kinE;
     int leftB, rightB;
-    std::vector<Vector4> discrete;    
+    double length0;
+    std::vector<Vector4> discrete; 
     
     gsl_matrix * P = gsl_matrix_alloc (4, 3);
     gsl_matrix * PB = gsl_matrix_alloc (3, 4);
@@ -97,9 +98,9 @@ void cBezier::interpolateL(std::vector<Vector3> &points, int n) {
   gsl_spline *spline_steffen = gsl_spline_alloc(gsl_interp_steffen, N+1);
   gsl_spline_init(spline_steffen, lgrid, tgrid, N+1);
 
-  int Ni = n;
-  //for (int i = 1; i <= Ni; ++i)
-  for (float i = 0.5; i < Ni; ++i)
+  int Ni = n; discrete.clear();
+  for (int i = 1; i <= Ni; ++i)
+  //for (float i = 0.5; i < Ni; ++i)
   {
     double li = (1 - i*1.0 / Ni) * lgrid[0] + (i*1.0 / Ni) * lgrid[N-1];
     double t = gsl_spline_eval(spline_steffen, li, acc);
@@ -120,7 +121,8 @@ void cBezier::interpolateL(std::vector<Vector3> &points, int n) {
   gsl_spline_free(spline_steffen);
   gsl_interp_accel_free(acc);
 
-  delete lgrid,tgrid;
+  delete[] lgrid;
+  delete[] tgrid;
   
 }
 
@@ -273,6 +275,7 @@ void cBezier::length_bezier()
   
   gsl_integration_cquad (&B1, 0.0, 1.0, ABS_ERR, REL_ERR2,w1, &result, &error, &nev);
   length = result;
+  gsl_integration_cquad_workspace_free (w1);
 }
 
 void cBezier::set_length0() 
@@ -400,6 +403,8 @@ void cBezier::bending_ef()
   loop(i,12) {
     f[i] += -0.5*EI[type-1]*integral[i];
   }
+  
+  gsl_integration_cquad_workspace_free (w1);
 }
 
 double vel_squared_ds(double t, void *p)
@@ -432,4 +437,6 @@ void cBezier::kin_energy()
   gsl_integration_cquad (&B1, 0.0, 1.0, ABS_ERR, REL_ERR2,w1, &resultc, &errorc, &nev);
   
   kinE = 0.5*rho[type-1]*(length0/length)*resultc;
+  
+  gsl_integration_cquad_workspace_free (w1);
 }
