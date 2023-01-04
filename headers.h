@@ -33,7 +33,7 @@ typedef std::stringstream sss;
 #define RTOL 1e-8
 
 #define NVEC 1
-#define EPSREL 1e-6
+#define EPSREL 1e-12
 #define EPSABS 0
 #define VERBOSE 0
 #define LAST 4
@@ -47,7 +47,7 @@ typedef std::stringstream sss;
 #define BTYPES 1
 double EA[BTYPES] = {0}; //Axial elastic constants (EA)
 double EI[BTYPES] = {0}; //Bending stiffness constants (EI)
-double rho[BTYPES] = {0}; //mass density of bezier
+double rho0[BTYPES] = {0}; //initial mass density of bezier
 double cfac = 0;
 #define RKdamp 1.0
 

@@ -108,10 +108,10 @@ void integrate(fibnetwork &fn, int nsteps, double tstep)
         //loop(i,np) loop(j,3) std::cout << " " << fn.CPx[i].comp[j];
         //std::cout << s << std::endl;
         
-        fn.printlammps_cps((char*) "Output_cps.lammpstrj",(char*) "a");
-		fn.printlammps((char*) "Output.lammpstrj",(char*) "a",20);
+      fn.printlammps_cps((char*) "Output_cps.lammpstrj",(char*) "a");
+      fn.printlammps((char*) "Output.lammpstrj",(char*) "a",20);
 		
-		//printf("%d %lf %lf %lf %lf %lf\n", s, fn.axialE, fn.bendE, fn.cohE, fn.kinE, fn.totE);
+      printf("%d %lf %lf %lf %lf %lf\n", s, fn.axialE, fn.bendE, fn.cohE, fn.kinE, fn.totE);
 	}
 	
 	//loop(i,2*np*3) W[i] += 0.001;

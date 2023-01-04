@@ -1,0 +1,36 @@
+Fiber-network Description
+
+8 cpoints
+2 cbeziers
+2 fibers
+
+1 cbezier type
+
+-10.0 10.0 xlo xhi
+-10.0 10.0 ylo yhi
+-10.0 10.0 zlo zhi
+
+BezConstants
+
+1 10.0 0.01 1.0
+
+Control points (last 3 columns: 1 for mobile dof, 0 for fixed dof)
+
+1 0.0 -0.05 0.0 0 0 0
+2 1.0 -0.05 0.0 1 1 1
+3 2.0 -0.5 0.0 1 1 1
+4 2.5 -1 0.0 1 1 1
+5 0.0 0.05 0.0 0 0 0
+6 1.0 0.05 0.0 1 1 1
+7 2.0 0.5 0.0 1 1 1
+8 2.5 1.0 0.0 1 1 1
+
+Cubic Beziers
+
+1 1 1 2 3 4
+2 1 5 6 7 8
+
+Fibers
+
+1 1
+2 2 

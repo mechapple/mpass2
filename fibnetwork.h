@@ -54,7 +54,7 @@ void fibnetwork::readfile(char *filename)
   loop(i,BTYPES) {
     sss ss;
     std::getline(infile, line); ss << line;
-    int ctmp;  ss >> ctmp >> EA[ctmp-1] >> EI[ctmp-1] >> rho[ctmp-1]; ss.str("");
+    int ctmp;  ss >> ctmp >> EA[ctmp-1] >> EI[ctmp-1] >> rho0[ctmp-1]; ss.str("");
     //printf("%s %d %lf %lf\n",line.c_str(),ctmp,EA[ctmp-1],EI[ctmp-1]);
   }
   

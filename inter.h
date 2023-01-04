@@ -110,6 +110,11 @@ double inter_energy(cBezier *b1, cBezier *b2)
   
   gsl_blas_dgemm (CblasNoTrans, CblasTrans, 1.0, bpair.P, bpair.Q, 0.0, bpair.PQ); 
   
+  //gsl_matrix_print(bpair.PP,"PP");
+  //gsl_matrix_print(bpair.QQ,"QQ");
+  //gsl_matrix_print(bpair.PQ,"PQ");
+  
+  
   int comp, nregions, neval, fail;
   double integral[1], error[1], prob[1];
   
@@ -134,5 +139,13 @@ double inter_energy(cBezier *b1, cBezier *b2)
     b2->f[i] += (integralc[i+24]+integralc[i+36]);
   }
   
+  if(0) {
+    double errorI = (integral[0]-b1->length0 * b2->length0)/(b1->length0 * b2->length0);
+    printf("EPSREL=%le Length_product = %lf Integral = %lf Error = %le\n",EPSREL,b1->length0 * b2->length0, integral[0], errorI);
+    
+    
+    
+  } 
+
   return integral[0];
 }

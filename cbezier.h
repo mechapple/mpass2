@@ -3,7 +3,7 @@ class cBezier {
   public:
     double x[12],v[12],f[12],a[12];
     int CP[4], type, id, fiber;
-    double energy, length, axialE, bendE, cohE, kinE;
+    double energy, length, axialE, bendE, cohE, kinE, rho;
     int leftB, rightB;
     double length0;
     std::vector<Vector4> discrete; 
@@ -179,7 +179,7 @@ static int XXf(const int *ndim, const double xx[],
   double J = sqrt(Jsq);
   
   loop(i,4) loop(j,4) f += DX[i]*gsl_matrix_get(params.PQ_symm, i, j)*DX[j];
-  f = f/2;
+  //f = f/2;
   
   loop(i,4) loop(j,4) {
     ff[i*4+j] = X[i]*X[j]*f/J;
@@ -204,7 +204,7 @@ static int YYf(const int *ndim, const double xx[],
   f = f/2;
   
   loop(i,4) loop(j,4) {
-    ff[i*4+j] = DX[i]*DX[j]*f/J;
+    ff[i*4+j] = (params.rho/2.0)*DX[i]*DX[j]*f/J - (params.kinE/params.length)*DX[i]*DX[j]/J;
   }
   
   return 0;
@@ -212,6 +212,7 @@ static int YYf(const int *ndim, const double xx[],
 
 void cBezier::update_bezier() 
 {
+  
   double Bvec[] = {-1, 3, -3, 1, 3, -6, 3, 0, -3, 3, 0, 0, 1, 0, 0, 0};
   
   const gsl_matrix_const_view P1 = gsl_matrix_const_view_array( x, 4, 3 );
@@ -221,6 +222,11 @@ void cBezier::update_bezier()
   gsl_blas_dgemm (CblasTrans, CblasNoTrans, 1.0, &P1.matrix, &B1.matrix, 0.0, PB);
   gsl_blas_dgemm (CblasTrans, CblasNoTrans, 1.0, PB, PB, 0.0, P_B);
   gsl_blas_dgemm (CblasNoTrans, CblasTrans, 1.0, &P1.matrix, &P1.matrix, 0.0, PP);
+  
+  
+  length_bezier();
+  rho = rho0[type-1]*(length0/length);
+  kin_energy();
   
   //update M and Mdot
   int comp, nregions, neval, fail;
@@ -232,13 +238,13 @@ void cBezier::update_bezier()
     STATEFILE, SPIN,
     &nregions, &neval, &fail, integral, error, prob);
   
-  loop(i,4) loop(j,4) gsl_matrix_set(M,i,j,rho[type-1]*(length0/length)*integral[i*4+j]);
+  loop(i,4) loop(j,4) gsl_matrix_set(M,i,j,rho*integral[i*4+j]);
   
   const gsl_matrix_const_view Q1 = gsl_matrix_const_view_array( v, 4, 3 );
   gsl_matrix_memcpy(Q, &Q1.matrix);
   
-  gsl_blas_dgemm (CblasNoTrans, CblasTrans, 1.0, Q, P, 0.0, PQ_symm);
-  gsl_blas_dgemm (CblasNoTrans, CblasTrans, 1.0, P, Q, 1.0, PQ_symm);
+  //gsl_blas_dgemm (CblasNoTrans, CblasTrans, 1.0, Q, P, 0.0, PQ_symm);
+  gsl_blas_dgemm (CblasNoTrans, CblasTrans, 1.0, P, Q, 0.0, PQ_symm);
     
   Cuhre(2, 16, XXf, this, NVEC,
     EPSREL, EPSABS, VERBOSE | LAST,
@@ -246,7 +252,13 @@ void cBezier::update_bezier()
     STATEFILE, SPIN,
     &nregions, &neval, &fail, integral, error, prob);
     
-  loop(i,4) loop(j,4) gsl_matrix_set(Mdot,i,j,rho[type-1]*(length0/length)*integral[i*4+j]);  
+  double fsum = 0.0;
+  loop(i,4) loop(j,4) fsum += integral[i*4+j];
+  
+  loop(i,4) loop(j,4) {
+    double val = rho*integral[i*4+j] - (fsum/length)*gsl_matrix_get(M,i,j);
+    gsl_matrix_set(Mdot,i,j,val);  
+  }
   
   gsl_blas_dgemm (CblasNoTrans, CblasTrans, 1.0, Q, Q, 0.0, QQ);
   
@@ -256,7 +268,7 @@ void cBezier::update_bezier()
     STATEFILE, SPIN,
     &nregions, &neval, &fail, integral, error, prob);
     
-  loop(i,4) loop(j,4) gsl_matrix_set(N,i,j,rho[type-1]*(length0/length)*integral[i*4+j]);  
+  loop(i,4) loop(j,4) gsl_matrix_set(N,i,j,integral[i*4+j]);  
   
   //gsl_matrix_print(PP,"PP:");
   //length_bezier(); set_length0();
@@ -436,7 +448,7 @@ void cBezier::kin_energy()
   gsl_integration_cquad_workspace * w1 = gsl_integration_cquad_workspace_alloc(100);
   gsl_integration_cquad (&B1, 0.0, 1.0, ABS_ERR, REL_ERR2,w1, &resultc, &errorc, &nev);
   
-  kinE = 0.5*rho[type-1]*(length0/length)*resultc;
+  kinE = 0.5*rho0[type-1]*(length0/length)*resultc;
   
   gsl_integration_cquad_workspace_free (w1);
 }
