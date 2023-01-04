@@ -18,6 +18,7 @@ int func(double t, const double W[], double f[], void *fn_data)
     FN->CPx[i0].comp[j0] = it->second;
   }
   
+  //apply C1/C2
   if(1)
     loop(i,FN->C2_cps.size()) {
       int a = FN->C2_cps[i].comp[0];
@@ -41,7 +42,8 @@ int func(double t, const double W[], double f[], void *fn_data)
       //printf("%d %d %d %d %d %d %lf %lf\n",i,a,b,c,d,e,m,x);
       loop(j,3) FN->CPx[c-1].comp[j] = x*FN->CPx[d-1].comp[j] + (1.0-x)*FN->CPx[b-1].comp[j];
     }
-      
+  
+  
   loop(i,nb) {
     loop(j,4) {
       int cpid = FN->Bz_list[i].CP[j]-1;
@@ -118,5 +120,15 @@ void integrate(fibnetwork &fn, int nsteps, double tstep)
 	
 	loop(i,np) loop(j,3) fn.CPx[i].comp[j] = W[i*3+j];
 	loop(i,np) loop(j,3) fn.CPv[i].comp[j] = W[i*3+j+np*3];
-	
+  
+  gsl_matrix_free(fn.Psys);
+  gsl_matrix_free(fn.Qsys);
+  gsl_matrix_free(fn.Rsys);
+  gsl_matrix_free(fn.Fsys);
+  
+  gsl_matrix_free(fn.GM);
+  gsl_matrix_free(fn.GMdot);
+  gsl_matrix_free(fn.GN);
+  
+	delete[] W;
 }
