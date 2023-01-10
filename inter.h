@@ -38,7 +38,7 @@ static int Integrand(const int *ndim, const double xx[],
     }
   
   C = sqrt(C);
-	ff[0] = V(C)*sqrt(J1)*sqrt(J2);	
+  ff[0] = V(C)*sqrt(J1)*sqrt(J2);	
 
   return 0;
 }
@@ -87,6 +87,7 @@ static int I1234(const int *ndim, const double xx[],
       
     }
   
+  C = sqrt(C);
   for(int i=0;i<12;i++)
   {
     F[i] = sqrt(J1*J2)*cP[i]*f(C);
